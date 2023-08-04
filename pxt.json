@@ -1,9 +1,7 @@
 {
     "name": "dip-switch",
     "dependencies": {
-        "core": "*",
-        "radio": "*",
-        "microphone": "*"
+        "core": "*"
     },
     "files": [
         "main.blocks",
