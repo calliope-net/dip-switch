@@ -1,7 +1,8 @@
 {
     "name": "dip-switch",
     "dependencies": {
-        "core": "*"
+        "core": "*",
+        "bit": "github:calliope-net/bit"
     },
     "files": [
         "main.blocks",
