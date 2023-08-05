@@ -1,7 +1,7 @@
 
 //% color=#001FCF icon="\uf204" block="DIP Schalter" weight=18
-namespace dipswitch0
-/* 03.08.2023 19:00
+namespace dipswitch
+/* 230805
 Calliope Erweiterung für die i2c-Module:
 https://wiki.seeedstudio.com/Grove-6-Position_DIP_Switch/
 https://wiki.seeedstudio.com/Grove-5-Way_Switch/
@@ -183,5 +183,4 @@ Code anhand der Informationen aus master.zip neu programmiert von Lutz Elßner i
         return pins.i2cReadBuffer(pADDR, pSize)
     }
 
-} // dipswitch.ts
-
+} // dip-switch.ts

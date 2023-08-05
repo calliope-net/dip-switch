@@ -1,14 +1,14 @@
 {
     "name": "dip-switch",
     "dependencies": {
-        "core": "*",
-        "bit": "github:calliope-net/bit"
+        "core": "*"
     },
     "files": [
         "main.blocks",
         "main.ts",
         "README.md",
-        "dipswitch.ts"
+        "dipswitch.ts",
+        "dip-switch.ts"
     ],
     "testFiles": [
         "test.ts"
