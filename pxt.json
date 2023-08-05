@@ -7,7 +7,6 @@
         "main.blocks",
         "main.ts",
         "README.md",
-        "dipswitch.ts",
         "dip-switch.ts"
     ],
     "testFiles": [
