@@ -1,16 +1,18 @@
 
 //% color=#001FCF icon="\uf204" block="DIP Schalter" weight=18
 namespace dipswitch
-/* 230805
-Calliope Erweiterung für die i2c-Module:
-https://wiki.seeedstudio.com/Grove-6-Position_DIP_Switch/
-https://wiki.seeedstudio.com/Grove-5-Way_Switch/
+/* 230806
+Calliope i2c Erweiterung für 'Grove - 6-Position DIP Switch' und 'Grove - 5-Way Switch'
+[Projekt-URL] https://github.com/calliope-net/dip-switch
+[README]      https://calliope-net.github.io/dip-switch
 
-https://github.com/Seeed-Studio/Grove_Multi_Switch/
-https://github.com/Seeed-Studio/Grove_Multi_Switch/archive/master.zip
+[Hardware] https://wiki.seeedstudio.com/Grove-6-Position_DIP_Switch/
+           https://wiki.seeedstudio.com/Grove-5-Way_Switch/
+[Software] https://github.com/Seeed-Studio/Grove_Multi_Switch/
+           https://github.com/Seeed-Studio/Grove_Multi_Switch/archive/master.zip
 
 keine Datenblätter zu i2c Registern / Programmierung gefunden
-Code anhand der Informationen aus master.zip neu programmiert von Lutz Elßner im August 2023
+Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner im August 2023
 */ {
     export enum eADDR { DIP_SWITCH = 0x03 } // i2c Adressen
     export enum eRegister {
