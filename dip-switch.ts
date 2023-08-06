@@ -3,6 +3,7 @@
 namespace dipswitch
 /* 230806
 Calliope i2c Erweiterung für 'Grove - 6-Position DIP Switch' und 'Grove - 5-Way Switch'
+optimiert und getestet für die gleichzeitige Nutzung mehrerer i2c Module am Calliope
 [Projekt-URL] https://github.com/calliope-net/dip-switch
 [README]      https://calliope-net.github.io/dip-switch
 
