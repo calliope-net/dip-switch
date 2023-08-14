@@ -1,5 +1,5 @@
 
-//% color=#001FCF icon="\uf204" block="DIP Schalter" weight=18
+//% color=#003F7F icon="\uf204" block="DIP Schalter" weight=04
 namespace dipswitch
 /* 230806
 Calliope i2c Erweiterung für 'Grove - 6-Position DIP Switch' und 'Grove - 5-Way Switch'
