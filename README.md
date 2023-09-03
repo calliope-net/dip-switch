@@ -6,6 +6,10 @@ Diese Seite bei [https://calliope-net.github.io/dip-switch/](https://calliope-ne
 * [Grove - 6-Position DIP Switch](https://wiki.seeedstudio.com/Grove-6-Position_DIP_Switch/)
 * [Grove - 5-Way Switch](https://wiki.seeedstudio.com/Grove-5-Way_Switch/)
 
+![](https://files.seeedstudio.com/wiki/Grove-6-Position_DIP_Switch/img/main.jpg)
+
+![](https://files.seeedstudio.com/wiki/Grove-5-Way_Switch/img/main.jpg)
+
 Dieses Repository kann als **Erweiterung** in MakeCode hinzugefügt werden.
 
 * öffne [makecode.calliope.cc](https://makecode.calliope.cc)
