@@ -1,7 +1,7 @@
 
 //% color=#003F7F icon="\uf204" block="DIP Schalter" weight=04
 namespace dipswitch
-/* 230806
+/* 230806 231003 https://github.com/calliope-net/dip-switch
 Calliope i2c Erweiterung für 'Grove - 6-Position DIP Switch' und 'Grove - 5-Way Switch'
 optimiert und getestet für die gleichzeitige Nutzung mehrerer i2c Module am Calliope
 [Projekt-URL] https://github.com/calliope-net/dip-switch
@@ -34,16 +34,19 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
         DIP1 = 1, DIP2 = 2, DIP3 = 3, DIP4 = 4, DIP5 = 5, DIP6 = 6,
         N = 1, W = 2, S = 3, O = 4, M = 5
     }
-    export enum eONOFF { ON = 0, OFF = 1 }
+    export enum eONOFF { ON = 0, OFF = 1 } // Schalter aus wenn Bit 0 = 1
 
-    let m_event: Buffer // internes Array für aktuelle Schalter-Stellung
+    let dipswitch_Buffer: Buffer // internes Array für aktuelle Schalter-Stellung
+    // Byte 0-3: 32 Bit UInt32LE; Byte 4:Schalter 1 ... Byte 9:Schalter 6
+    // Byte 4-9: 00000001:Schalter OFF; 00000001:Schalter ON; Bit 1-7 löschen & 0x01
 
 
     // ========== group="i2c Schalter init / event detect mode"
 
     //% group="i2c Schalter init / event detect mode"
-    //% block="i2c %i2cADDR event detect mode %pEvent" weight=94
-    export function setEvent(pADDR: eADDR, pEvent: boolean) {   // === Beispielcode deaktiviert ===
+    //% block="i2c %pADDR event detect mode %pEvent" weight=4
+    //% pADDR.shadow="dipswitch_eADDR"
+    export function setEvent(pADDR: number, pEvent: boolean) {   // === Beispielcode deaktiviert ===
         // probeDevID()
         let m_btnCnt = btnCnt(pADDR) // Register I2C_CMD_GET_DEV_ID
         //let m_devID = readReg(pADDR, eRegister.I2C_CMD_GET_DEV_ID, 4)
@@ -60,13 +63,14 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
             let b = pins.createBuffer(1)
             if (pEvent) { b.setUint8(0, eRegister.I2C_CMD_EVENT_DET_MODE) } // enable Events
             else { b.setUint8(0, eRegister.I2C_CMD_BLOCK_DET_MODE) }        // disable Events
-            pins.i2cWriteBuffer(pADDR, b)
+            dipswitch_i2cWriteBufferError = pins.i2cWriteBuffer(pADDR, b)
         }
     }
 
     //% group="i2c Schalter init / event detect mode"
-    //% block="i2c %i2cADDR Modell (5 oder 6 Schalter)" weight=92
-    export function btnCnt(pADDR: eADDR) {
+    //% block="i2c %pADDR Modell (5 oder 6 Schalter)" weight=2
+    //% pADDR.shadow="dipswitch_eADDR"
+    export function btnCnt(pADDR: number) {
         switch (readReg(pADDR, eRegister.I2C_CMD_GET_DEV_ID, 4).getUint8(0)) {
             case 2: return 5    // Grove 5-Way Tactile
             case 3: return 6    // Grove 6-Position DIP Switch
@@ -74,28 +78,44 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
         return 0
     }
 
+    // ========== group="i2c Schalter direkt einlesen (ohne Array)"
+
+    //% group="i2c Schalter direkt einlesen (ohne Array)"
+    //% block="i2c %pADDR lese Schalter als Bitmuster (0-63)"
+    //% pADDR.shadow="dipswitch_eADDR"
+    export function readBIN(pADDR: number) {
+        let bu: Buffer = readReg(pADDR, eRegister.I2C_CMD_GET_DEV_EVENT, 10)
+        let bin: number = 0
+        for (let iSwitch = eSwitch.DIP1; iSwitch <= eSwitch.DIP6; iSwitch += 1) {
+            if ((bu.getUint8(iSwitch + 3) & 0x01) == eONOFF.ON) { bin = bin | 1 << (iSwitch - 1) }
+        }
+        return bin
+    }
+
+
 
     // ========== group="i2c Schalter einlesen in Array"
 
     //% group="i2c Schalter einlesen in Array"
-    //% block="i2c %i2cADDR lese Schalter in internes Array" weight=88
-    export function readSwitch(pADDR: eADDR) {
-        m_event = readReg(pADDR, eRegister.I2C_CMD_GET_DEV_EVENT, 10)
+    //% block="i2c %pADDR lese Schalter in internes Array"
+    //% pADDR.shadow="dipswitch_eADDR"
+    export function readSwitch(pADDR: number) {
+        dipswitch_Buffer = readReg(pADDR, eRegister.I2C_CMD_GET_DEV_EVENT, 10)
     }
 
 
     // ========== group="Schalter auslesen aus Array"
 
     //% group="Schalter auslesen aus Array"
-    //% block="Schalter %pSwitch %pONOFF aus Array" weight=78
+    //% block="Schalter %pSwitch %pONOFF aus Array" weight=8
     export function getON(pSwitch: eSwitch, pONOFF: eONOFF): boolean {
-        if (m_event != null && m_event.length >= 10) {
-            return (m_event.getUint8(pSwitch + 3) & 0x01) == pONOFF // ON=0 OFF=1
+        if (dipswitch_Buffer != null && dipswitch_Buffer.length >= 10) {
+            return (dipswitch_Buffer.getUint8(pSwitch + 3) & 0x01) == pONOFF // ON=0 OFF=1
         } else { return false }
     }
 
     //% group="Schalter auslesen aus Array"
-    //% block="erster Schalter, der ON ist, (0-6) aus Array" weight=76
+    //% block="erster Schalter, der ON ist, (1-6;0) aus Array" weight=6
     export function getNumber() {
         for (let iSwitch = eSwitch.DIP1; iSwitch <= eSwitch.DIP6; iSwitch += 1) {
             if (getON(iSwitch, eONOFF.ON)) { return iSwitch }
@@ -104,7 +124,7 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
     }
 
     //% group="Schalter auslesen aus Array"
-    //% block="alle Schalter als Bitmuster (0-63) aus Array" weight=74
+    //% block="alle Schalter als Bitmuster (0-63) aus Array" weight=4
     export function getBIN() {
         let bin: number = 0
         for (let iSwitch = eSwitch.DIP1; iSwitch <= eSwitch.DIP6; iSwitch += 1) {
@@ -116,74 +136,107 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
 
     // ========== group="Logik"
 
-    export enum eBit { AND, OR, XOR, NOT_AND, LEFT_SHIFT, RIGHT_SHIFT }
-
-    //% group="Logik"
-    //% block="bitwise %a %operator %b" weight=68
-    export function bitwise(a: number, operator: eBit, b: number): number {
-        if (operator == eBit.AND) { return a & b }
-        else if (operator == eBit.OR) { return a | b }
-        else if (operator == eBit.XOR) { return a ^ b }
-        else if (operator == eBit.NOT_AND) { return (~a) & b }
-        else if (operator == eBit.LEFT_SHIFT) { return a << b }
-        else if (operator == eBit.RIGHT_SHIFT) { return a >> b }
-        else { return a }
+    export enum eBit {
+        //% block="a & b AND"
+        AND,
+        //% block="a | b OR"
+        OR,
+        //% block="a ^ b XOR"
+        XOR,
+        //% block="(~a) & b (NOT a) AND b"
+        NOT_AND,
+        //% block="a << b"
+        LEFT,
+        //% block="a >> b"
+        RIGHT,
+        //% block="a >>> b"
+        RIGHTZ
     }
+
 
 
     // ========== advanced=true
 
+    //% group="Logik" advanced=true
+    //% block="Bitweise %a %operator %b"
+    export function bitwise(a: number, operator: eBit, b: number): number {
+        switch (operator) {
+            case eBit.AND: { return a & b }
+            case eBit.OR: { return a | b }
+            case eBit.XOR: { return a ^ b }
+            case eBit.NOT_AND: { return (~a) & b }
+            case eBit.LEFT: { return a << b }
+            case eBit.RIGHT: { return a >> b }
+            case eBit.RIGHTZ: { return a >>> b }
+            default: { return a }
+        }
+    }
+
+
     // ========== group="i2c Register" advanced=true
 
     //% group="i2c Register" advanced=true
-    //% block="i2c %pADDR lese Register %pRegister UInt32LE" weight=48
-    export function readRegister32(pADDR: eADDR, pRegister: eRegister) { // 4 Byte sizeof id uint32_t
+    //% block="i2c %pADDR lese Register %pRegister UInt32LE" weight=8
+    //% pADDR.shadow="dipswitch_eADDR"
+    export function readRegister32(pADDR: number, pRegister: eRegister) { // 4 Byte sizeof id uint32_t
         return readReg(pADDR, pRegister, 4).getNumber(NumberFormat.UInt32LE, 0)
     }
 
     //% group="i2c Register" advanced=true
-    //% block="i2c %pADDR lese Register %pRegister size %pSize" weight=46
+    //% block="i2c %pADDR lese Register %pRegister size %pSize" weight=6
+    //% pADDR.shadow="dipswitch_eADDR"
     //% pSize.defl=10
-    export function readRegister(pADDR: eADDR, pRegister: eRegister, pSize: number) {
+    export function readRegister(pADDR: number, pRegister: eRegister, pSize: number) {
         return readReg(pADDR, pRegister, pSize).toArray(NumberFormat.Int8LE)
     }
 
-
-    // ========== group="für Programmierer" advanced=true
-
-    //% group="für Programmierer" advanced=true
-    //% block="i2c-Adressen %pADDR" weight=38
-    export function getEnumADDR(pADDR: eADDR) { return pADDR }
-
-    //% group="für Programmierer" advanced=true
-    //% block="Register-Nummern %pRegister" weight=34
-    export function getEnumRegister(pReg: eRegister) { return pReg }
 
 
     // ========== group="internes Array auslesen" advanced=true
 
     //% group="internes Array auslesen" advanced=true
-    //% block="Event Code (Byte 0-3) UInt32LE aus Array" weight=28
+    //% block="Event Code (Byte 0-3) UInt32LE aus Array" weight=8
     export function getEvent() {
-        if (m_event != null && m_event.length >= 4) { return m_event.getNumber(NumberFormat.UInt32LE, 0) }
+        if (dipswitch_Buffer != null && dipswitch_Buffer.length >= 4) { return dipswitch_Buffer.getNumber(NumberFormat.UInt32LE, 0) }
         else { return -1 }
     }
 
     //% group="internes Array auslesen" advanced=true
-    //% block="gesamtes Array (10 Byte)" weight=26
+    //% block="gesamtes Array (10 Byte)" weight=6
     export function getArray(): number[] {
-        if (m_event != null) { return m_event.toArray(NumberFormat.UInt32LE) }
-        else { return [] }
+        if (dipswitch_Buffer != null)
+            return dipswitch_Buffer.toArray(NumberFormat.UInt8LE)
+            //return m_event.toArray(NumberFormat.UInt32LE)
+        else
+            return []
     }
 
 
     // ========== PRIVATE function (return Buffer)
 
-    function readReg(pADDR: eADDR, pReg: eRegister, pSize: number): Buffer {
+    function readReg(pADDR: number, pReg: eRegister, pSize: number): Buffer {
         let b = pins.createBuffer(1)
         b.setUint8(0, pReg)
-        pins.i2cWriteBuffer(pADDR, b)
+        dipswitch_i2cWriteBufferError = pins.i2cWriteBuffer(pADDR, b)
         return pins.i2cReadBuffer(pADDR, pSize)
     }
+
+
+
+    // ========== group="Register und i2c Adressen"
+
+    //% group="Register und i2c Adressen" advanced=true
+    //% block="%pReg" weight=6
+    export function getEnumRegister(pReg: eRegister) { return pReg }
+
+    //% blockId=dipswitch_eADDR
+    //% group="Register und i2c Adressen" advanced=true
+    //% block="%pADDR" weight=4
+    export function dipswitch_eADDR(pADDR: eADDR): number { return pADDR }
+
+    //% group="Register und i2c Adressen" advanced=true
+    //% block="Fehlercode vom letzten WriteBuffer (0 ist kein Fehler)" weight=2
+    export function i2cError() { return dipswitch_i2cWriteBufferError }
+    let dipswitch_i2cWriteBufferError: number = 0 // Fehlercode vom letzten WriteBuffer (0 ist kein Fehler)
 
 } // dip-switch.ts
