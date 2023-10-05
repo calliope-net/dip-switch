@@ -8,7 +8,8 @@
         "main.blocks",
         "main.ts",
         "README.md",
-        "dip-switch.ts"
+        "dip-switch.ts",
+        "dipswitch.ts"
     ],
     "testFiles": [
         "test.ts"

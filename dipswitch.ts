@@ -1,7 +1,7 @@
 
-//% color=#003F7F icon="\uf204" block="DIP Schalter_" weight=04
-namespace dipswitch_
-/* 230806 231003 https://github.com/calliope-net/dip-switch
+//% color=#003F7F icon="\uf204" block="DIP Schalter" weight=04
+namespace dipswitch
+/* 230806 231005 https://github.com/calliope-net/dip-switch
 Calliope i2c Erweiterung für 'Grove - 6-Position DIP Switch' und 'Grove - 5-Way Switch'
 optimiert und getestet für die gleichzeitige Nutzung mehrerer i2c Module am Calliope
 [Projekt-URL] https://github.com/calliope-net/dip-switch
@@ -15,7 +15,7 @@ optimiert und getestet für die gleichzeitige Nutzung mehrerer i2c Module am Cal
 keine Datenblätter zu i2c Registern / Programmierung gefunden
 Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner im August 2023
 */ {
-    export enum eADDR { DIP_SWITCH = 0x03 } // i2c Adressen
+    export enum eADDR { DIP_SWITCH_x03 = 0x03 } // i2c Adressen
     export enum eRegister {
         I2C_CMD_GET_DEV_ID = 0x00,      // gets device ID information
         I2C_CMD_GET_DEV_EVENT = 0x01,	// gets device event status
@@ -48,22 +48,40 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
     //% pADDR.shadow="dipswitch_eADDR"
     export function setEvent(pADDR: number, pEvent: boolean) {   // === Beispielcode deaktiviert ===
         // probeDevID()
-        let m_btnCnt = btnCnt(pADDR) // Register I2C_CMD_GET_DEV_ID
-        //let m_devID = readReg(pADDR, eRegister.I2C_CMD_GET_DEV_ID, 4)
-        // getDevVer
-        //let versions = readReg(pADDR, eRegister.I2C_CMD_TEST_GET_VER, 10) // _MULTI_SWITCH_VERSIONS_SZ = 10
-        // getSwitchCount
-        //switch (m_devID.getUint8(0)) {
-        //    case 2: m_btnCnt = 5; break
-        //    case 3: m_btnCnt = 6; break
-        //}
-        //return (m_btnCnt > 0)
-        if (m_btnCnt > 0) {
-            // setEventMode
-            let b = pins.createBuffer(1)
-            if (pEvent) { b.setUint8(0, eRegister.I2C_CMD_EVENT_DET_MODE) } // enable Events
-            else { b.setUint8(0, eRegister.I2C_CMD_BLOCK_DET_MODE) }        // disable Events
-            dipswitch_i2cWriteBufferError = pins.i2cWriteBuffer(pADDR, b)
+        let m_btnCnt: number
+
+        let b = Buffer.create(1)
+        b.setUint8(0, eRegister.I2C_CMD_GET_DEV_ID)
+        dipswitch_i2cWriteBufferError = pins.i2cWriteBuffer(pADDR, b)
+        //return pins.i2cReadBuffer(pADDR, 4)
+
+        if (i2cNoError(pADDR)) {
+
+            switch (pins.i2cReadBuffer(pADDR, 4).getUint8(0)) {
+                case 2: m_btnCnt = 5    // Grove 5-Way Tactile
+                case 3: m_btnCnt = 6    // Grove 6-Position DIP Switch
+            }
+
+            //let m_btnCnt = btnCnt(pADDR) // Register I2C_CMD_GET_DEV_ID
+
+            //let m_devID = readReg(pADDR, eRegister.I2C_CMD_GET_DEV_ID, 4)
+            // getDevVer
+            //let versions = readReg(pADDR, eRegister.I2C_CMD_TEST_GET_VER, 10) // _MULTI_SWITCH_VERSIONS_SZ = 10
+            // getSwitchCount
+            //switch (m_devID.getUint8(0)) {
+            //    case 2: m_btnCnt = 5; break
+            //    case 3: m_btnCnt = 6; break
+            //}
+            //return (m_btnCnt > 0)
+            if (m_btnCnt > 0) {
+                // setEventMode
+                b = pins.createBuffer(1)
+                if (pEvent)
+                    b.setUint8(0, eRegister.I2C_CMD_EVENT_DET_MODE)  // enable Events
+                else
+                    b.setUint8(0, eRegister.I2C_CMD_BLOCK_DET_MODE)         // disable Events
+                dipswitch_i2cWriteBufferError = pins.i2cWriteBuffer(pADDR, b)
+            }
         }
     }
 
@@ -206,7 +224,7 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
     export function getArray(): number[] {
         if (dipswitch_Buffer != null)
             return dipswitch_Buffer.toArray(NumberFormat.UInt8LE)
-            //return m_event.toArray(NumberFormat.UInt32LE)
+        //return m_event.toArray(NumberFormat.UInt32LE)
         else
             return []
     }
@@ -215,7 +233,7 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
     // ========== PRIVATE function (return Buffer)
 
     function readReg(pADDR: number, pReg: eRegister, pSize: number): Buffer {
-        let b = pins.createBuffer(1)
+        let b = Buffer.create(1)
         b.setUint8(0, pReg)
         dipswitch_i2cWriteBufferError = pins.i2cWriteBuffer(pADDR, b)
         return pins.i2cReadBuffer(pADDR, pSize)
@@ -237,6 +255,17 @@ Code anhand der cpp-Beispiele aus master.zip neu programmiert von Lutz Elßner i
     //% group="Register und i2c Adressen" advanced=true
     //% block="Fehlercode vom letzten WriteBuffer (0 ist kein Fehler)" weight=2
     export function i2cError() { return dipswitch_i2cWriteBufferError }
+
     let dipswitch_i2cWriteBufferError: number = 0 // Fehlercode vom letzten WriteBuffer (0 ist kein Fehler)
 
-} // dip-switch.ts
+    function i2cNoError(pADDR: number): boolean {
+        if (i2cError() == 0) {
+            return true
+        } else {
+            basic.showNumber(pADDR) // wenn Modul nicht angesteckt: i2c Adresse anzeigen und Abbruch
+            return false
+        }
+    }
+
+} // dipswitch.ts
+
